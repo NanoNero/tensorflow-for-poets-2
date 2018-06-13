@@ -26,12 +26,16 @@ import org.tensorflow.demo.Classifier.Recognition;
 
 import java.util.List;
 
+
+
 public class RecognitionScoreView extends View implements ResultsView {
+
   private static final float TEXT_SIZE_DIP = 24;
   private List<Recognition> results;
   private final float textSizePx;
   private final Paint fgPaint;
   private final Paint bgPaint;
+
 
   public RecognitionScoreView(final Context context, final AttributeSet set) {
     super(context, set);
@@ -44,6 +48,7 @@ public class RecognitionScoreView extends View implements ResultsView {
 
     bgPaint = new Paint();
     bgPaint.setColor(0xcc4285f4);
+
   }
 
   @Override
@@ -54,6 +59,7 @@ public class RecognitionScoreView extends View implements ResultsView {
 
   @Override
   public void onDraw(final Canvas canvas) {
+
     final int x = 10;
     int y = (int) (fgPaint.getTextSize() * 1.5f);
 
@@ -63,7 +69,8 @@ public class RecognitionScoreView extends View implements ResultsView {
       for (final Recognition recog : results) {
         canvas.drawText(recog.getTitle() + ": " + recog.getConfidence(), x, y, fgPaint);
         y += fgPaint.getTextSize() * 1.5f;
+        }
       }
     }
-  }
 }
+

@@ -23,6 +23,10 @@ import android.app.DialogFragment;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.util.Range;
+import android.support.annotation.NonNull;
 import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
@@ -33,16 +37,20 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.Image;
 import android.media.ImageReader;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.text.TextUtils;
+import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
@@ -51,18 +59,29 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import org.tensorflow.demo.env.Logger;
 import org.tensorflow.demo.R;
 
+import static android.app.Activity.RESULT_OK;
+import static android.content.ContentValues.TAG;
+
 public class CameraConnectionFragment extends Fragment {
+
   private static final Logger LOGGER = new Logger();
+  private static final int REQUEST_CODE = 1;
 
   /**
    * The camera preview size will be chosen to be the smallest frame by pixel size capable of
@@ -181,6 +200,8 @@ public class CameraConnectionFragment extends Fragment {
         }
       };
 
+  private File file;
+
   /**
    * An additional thread for running tasks that shouldn't block the UI.
    */
@@ -224,14 +245,17 @@ public class CameraConnectionFragment extends Fragment {
    */
   private final int layout;
 
+  private Integer camFace = CameraCharacteristics.LENS_FACING_BACK;
 
   private final ConnectionCallback cameraConnectionCallback;
 
-  private CameraConnectionFragment(
-      final ConnectionCallback connectionCallback,
-      final OnImageAvailableListener imageListener,
-      final int layout,
-      final Size inputSize) {
+  private Range<Integer> FPS = new Range(10, 10);
+
+  protected CameraConnectionFragment(
+          final ConnectionCallback connectionCallback,
+          final OnImageAvailableListener imageListener,
+          final int layout,
+          final Size inputSize) {
     this.cameraConnectionCallback = connectionCallback;
     this.imageListener = imageListener;
     this.layout = layout;
@@ -317,7 +341,7 @@ public class CameraConnectionFragment extends Fragment {
   @Override
   public View onCreateView(
       final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
-    return inflater.inflate(layout, container, false);
+      return inflater.inflate(layout, container, false);
   }
 
   @Override
@@ -368,7 +392,7 @@ public class CameraConnectionFragment extends Fragment {
 
         // We don't use a front facing camera in this sample.
         final Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-        if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+        if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
           continue;
         }
 
@@ -430,13 +454,17 @@ public class CameraConnectionFragment extends Fragment {
     final Activity activity = getActivity();
     final CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
     try {
+
       if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
         throw new RuntimeException("Time out waiting to lock camera opening.");
       }
+
       manager.openCamera(cameraId, stateCallback, backgroundHandler);
+
     } catch (final CameraAccessException e) {
       LOGGER.e(e, "Exception!");
-    } catch (final InterruptedException e) {
+    }
+    catch (final InterruptedException e) {
       throw new RuntimeException("Interrupted while trying to lock camera opening.", e);
     }
   }
@@ -538,7 +566,7 @@ public class CameraConnectionFragment extends Fragment {
           new CameraCaptureSession.StateCallback() {
 
             @Override
-            public void onConfigured(final CameraCaptureSession cameraCaptureSession) {
+            public void onConfigured(@NonNull final CameraCaptureSession cameraCaptureSession) {
               // The camera is already closed
               if (null == cameraDevice) {
                 return;
@@ -548,12 +576,15 @@ public class CameraConnectionFragment extends Fragment {
               captureSession = cameraCaptureSession;
               try {
                 // Auto focus should be continuous for camera preview.
-                previewRequestBuilder.set(
+                /*previewRequestBuilder.set(
                     CaptureRequest.CONTROL_AF_MODE,
-                    CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                    CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);*/
                 // Flash is automatically enabled when necessary.
                 previewRequestBuilder.set(
                     CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+                // Set FPS rate for capturing images
+                previewRequestBuilder.set(
+                        CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, FPS);
 
                 // Finally, we start displaying the camera preview.
                 previewRequest = previewRequestBuilder.build();
@@ -565,7 +596,7 @@ public class CameraConnectionFragment extends Fragment {
             }
 
             @Override
-            public void onConfigureFailed(final CameraCaptureSession cameraCaptureSession) {
+            public void onConfigureFailed(@NonNull final CameraCaptureSession cameraCaptureSession) {
               showToast("Failed");
             }
           },
@@ -651,4 +682,27 @@ public class CameraConnectionFragment extends Fragment {
           .create();
     }
   }
+
+  public void takePhoto(Bitmap bitmap) throws FileNotFoundException {
+    // create bitmap
+    String root = Environment.getExternalStorageDirectory().getAbsolutePath();
+    File myDir = new File(root + "/saved_images");
+    myDir.mkdirs();
+
+    String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+    String fname = "IMG_"+timestamp+".jpg";
+    //String fname = "Image-"+ o +".jpg";
+    File file = new File (myDir, fname);
+    if (file.exists ()) file.delete ();
+    try {
+      FileOutputStream out = new FileOutputStream(file);
+      bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+      out.flush();
+      out.close();
+
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
 }

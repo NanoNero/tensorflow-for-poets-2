@@ -13,10 +13,341 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
+
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000"
-    tools:context="org.tensorflow.demo.CameraActivity" />
+    android:id="@+id/parentPanel">
+
+    <Button
+        android:id="@+id/infobutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp"
+        android:text=" ? "
+        android:textSize="30dp"
+        />
+
+    <FrameLayout
+        android:id="@+id/container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:background="#000"
+        tools:context="org.tensorflow.demo.CameraActivity"
+        android:visibility="visible">
+
+    </FrameLayout>
+
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/imageFrame"
+        android:visibility="invisible">
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="40dp"
+            android:text="1/20"
+            android:layout_gravity="bottom"/>
+
+
+    </FrameLayout>
+
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:visibility="invisible"
+        android:id="@+id/helpview">
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:background="@color/control_background">
+
+            <ImageView
+                android:id="@+id/fistimg"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_marginTop="12dp"
+                android:foregroundGravity="left"
+                android:src="@drawable/fist" />
+
+            <TextView
+                android:id="@+id/fisttext"
+                android:layout_width="300dp"
+                android:layout_height="150dp"
+                android:layout_alignParentEnd="true"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_marginTop="12dp"
+                android:layout_toEndOf="@+id/pinchimg"
+                android:background="@android:color/white"
+                android:gravity="left|center"
+                android:paddingLeft="15dp"
+                android:text="Click a picture"
+                android:textColor="#DC431E87"
+                android:textAlignment="center"
+                android:textSize="30dp" />
+
+            <ImageView
+                android:id="@+id/pinchimg"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/fistimg"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:foregroundGravity="left"
+                android:src="@drawable/pinch" />
+
+            <TextView
+                android:id="@+id/pinchtext"
+                android:layout_width="300dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/fisttext"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_toEndOf="@+id/pinchimg"
+                android:background="@android:color/white"
+                android:gravity="left|center"
+                android:paddingLeft="15dp"
+                android:text="View saved images"
+                android:textColor="#DC431E87"
+                android:textAlignment="center"
+                android:textSize="30dp" />
+
+            <ImageView
+                android:id="@+id/palmimg"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/pinchimg"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:foregroundGravity="left"
+                android:src="@drawable/palm" />
+
+            <TextView
+                android:id="@+id/palmtext"
+                android:layout_width="300dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/pinchtext"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_toEndOf="@+id/pinchimg"
+                android:background="@android:color/white"
+                android:gravity="left|center"
+                android:paddingLeft="15dp"
+                android:text="Go back to the Camera"
+                android:textColor="#DC431E87"
+                android:textAlignment="center"
+                android:textSize="30dp" />
+
+            <ImageView
+                android:id="@+id/scissorsimg"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/palmimg"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:foregroundGravity="left"
+                android:src="@drawable/scissors" />
+
+            <TextView
+                android:id="@+id/scissorstext"
+                android:layout_width="300dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/palmtext"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_toEndOf="@+id/pinchimg"
+                android:background="@android:color/white"
+                android:gravity="left|center"
+                android:paddingLeft="15dp"
+                android:text="Delete my image"
+                android:textColor="#DC431E87"
+                android:textAlignment="center"
+                android:textSize="30dp" />
+
+
+            <ImageView
+                android:id="@+id/thumbsupimg"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/scissorsimg"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:foregroundGravity="left"
+                android:src="@drawable/thumbsup" />
+
+            <TextView
+                android:id="@+id/tutext"
+                android:layout_width="300dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/scissorstext"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_toEndOf="@+id/pinchimg"
+                android:background="@android:color/white"
+                android:gravity="left|center"
+                android:paddingLeft="15dp"
+                android:text="Select Yes and delete my image"
+                android:textColor="#DC431E87"
+                android:textAlignment="center"
+                android:textSize="30dp" />
+
+            <ImageView
+                android:id="@+id/thumbsdownimg"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/thumbsupimg"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:foregroundGravity="left"
+                android:src="@drawable/thumbsdown" />
+
+            <TextView
+                android:id="@+id/tdtext"
+                android:layout_width="300dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/tutext"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_toEndOf="@+id/pinchimg"
+                android:background="@android:color/white"
+                android:gravity="left|center"
+                android:paddingLeft="15dp"
+                android:text="Select No and do not delete my image"
+                android:textColor="#DC431E87"
+                android:textAlignment="center"
+                android:textSize="30dp" />
+
+            <ImageView
+                android:id="@+id/pointrightimg"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/thumbsdownimg"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:foregroundGravity="left"
+                android:src="@drawable/pointright" />
+
+            <TextView
+                android:id="@+id/prtext"
+                android:layout_width="300dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/tdtext"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_toEndOf="@+id/pinchimg"
+                android:background="@android:color/white"
+                android:gravity="left|center"
+                android:paddingLeft="15dp"
+                android:text="Go to the next image"
+                android:textColor="#DC431E87"
+                android:textAlignment="center"
+                android:textSize="30dp" />
+
+            <ImageView
+                android:id="@+id/pointleftimg"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/pointrightimg"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:foregroundGravity="left"
+                android:src="@drawable/pointleft" />
+
+            <TextView
+                android:id="@+id/pltext"
+                android:layout_width="300dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/prtext"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_toEndOf="@+id/pinchimg"
+                android:background="@android:color/white"
+                android:gravity="left|center"
+                android:paddingLeft="15dp"
+                android:text="Go to the previous image"
+                android:textColor="#DC431E87"
+                android:textAlignment="center"
+                android:textSize="30dp" />
+
+
+            <ImageView
+                android:id="@+id/lsignimg"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/pointleftimg"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:foregroundGravity="left"
+                android:src="@drawable/lsign" />
+
+            <TextView
+                android:id="@+id/lsigntext"
+                android:layout_width="300dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/pltext"
+                android:layout_marginBottom="85dp"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:layout_toEndOf="@+id/pinchimg"
+                android:background="@android:color/white"
+                android:gravity="left|center"
+                android:paddingLeft="15dp"
+                android:text="Rotate my image through a right angle"
+                android:textColor="#DC431E87"
+                android:textAlignment="center"
+                android:textSize="30dp" />
+
+        </RelativeLayout>
+
+
+    </ScrollView>
+
+
+</FrameLayout>
+
+
+
+
+
+
+
+
+

@@ -18,24 +18,47 @@ package org.tensorflow.demo;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.Image.Plane;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Size;
+import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
+import android.view.ViewGroup.LayoutParams;
+
+import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
+
 import org.tensorflow.demo.env.Logger;
-import org.tensorflow.demo.R;
+
+
+import static android.widget.Toast.makeText;
+
 
 public abstract class CameraActivity extends Activity implements OnImageAvailableListener {
   private static final Logger LOGGER = new Logger();
+  public boolean onResume_just_ran = false;
 
   private static final int PERMISSIONS_REQUEST = 1;
 
@@ -47,13 +70,68 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
   private Handler handler;
   private HandlerThread handlerThread;
 
+  public ImageView imageView;
+
+  public boolean imageOn = false;
+  public int currentPosition = 0;
+  public boolean popupWindowOn = false;
+  private int rotationAngle = 0;
+  public Button help;
+
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
+
     LOGGER.d("onCreate " + this);
     super.onCreate(null);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
     setContentView(R.layout.activity_camera);
+    imageView = (ImageView) findViewById(R.id.imageView);
+    help = (Button) findViewById(R.id.infobutton);
+
+    help.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        FrameLayout Container = (FrameLayout) findViewById(R.id.container);
+        FrameLayout imageFrame = (FrameLayout) findViewById(R.id.imageFrame);
+        ScrollView HelpView = (ScrollView) findViewById(R.id.helpview);
+        RecognitionScoreView resultsView = (RecognitionScoreView) findViewById(R.id.results);
+
+        new Thread() {
+          public void run() {
+            try {
+              runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  if(help.getText().equals(" ? ")){
+                    imageFrame.setVisibility(View.INVISIBLE);
+                    resultsView.setVisibility(View.INVISIBLE);
+                    Container.setVisibility(View.INVISIBLE);
+                    HelpView.setVisibility(View.VISIBLE);
+                    help.setText("Return");
+                }
+                else {
+                    if(imageOn) {
+                      imageFrame.setVisibility(View.VISIBLE);
+                    }
+                    else {
+                      resultsView.setVisibility(View.VISIBLE);
+                      Container.setVisibility(View.VISIBLE);
+                    }
+                    Container.setVisibility(View.VISIBLE);
+                    HelpView.setVisibility(View.INVISIBLE);
+                    help.setText(" ? ");
+                  }
+                  }
+                });
+              Thread.sleep(300);
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
+        }.start();
+      }
+    });
 
     if (hasPermission()) {
       setFragment();
@@ -76,11 +154,18 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
     handlerThread = new HandlerThread("inference");
     handlerThread.start();
     handler = new Handler(handlerThread.getLooper());
+    onResume_just_ran = true;
   }
 
   @Override
   public synchronized void onPause() {
     LOGGER.d("onPause " + this);
+
+    if (onResume_just_ran) {
+      super.onPause();
+      onResume_just_ran = false;
+      return;
+    }
 
     if (!isFinishing()) {
       LOGGER.d("Requesting finish");
@@ -119,7 +204,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
 
   @Override
   public void onRequestPermissionsResult(
-      final int requestCode, final String[] permissions, final int[] grantResults) {
+          final int requestCode, final String[] permissions, final int[] grantResults) {
     switch (requestCode) {
       case PERMISSIONS_REQUEST: {
         if (grantResults.length > 0
@@ -144,29 +229,29 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
   private void requestPermission() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(PERMISSION_STORAGE)) {
-        Toast.makeText(CameraActivity.this, "Camera AND storage permission are required for this demo", Toast.LENGTH_LONG).show();
+        makeText(CameraActivity.this, "Camera AND storage permission are required for this demo", Toast.LENGTH_LONG).show();
       }
-      requestPermissions(new String[] {PERMISSION_CAMERA, PERMISSION_STORAGE}, PERMISSIONS_REQUEST);
+      requestPermissions(new String[]{PERMISSION_CAMERA, PERMISSION_STORAGE}, PERMISSIONS_REQUEST);
     }
   }
 
   protected void setFragment() {
     final Fragment fragment =
-        CameraConnectionFragment.newInstance(
-            new CameraConnectionFragment.ConnectionCallback() {
-              @Override
-              public void onPreviewSizeChosen(final Size size, final int rotation) {
-                CameraActivity.this.onPreviewSizeChosen(size, rotation);
-              }
-            },
-            this,
-            getLayoutId(),
-            getDesiredPreviewFrameSize());
+            CameraConnectionFragment.newInstance(
+                    new CameraConnectionFragment.ConnectionCallback() {
+                      @Override
+                      public void onPreviewSizeChosen(final Size size, final int rotation) {
+                        CameraActivity.this.onPreviewSizeChosen(size, rotation);
+                      }
+                    },
+                    this,
+                    getLayoutId(),
+                    getDesiredPreviewFrameSize());
 
     getFragmentManager()
-        .beginTransaction()
-        .replace(R.id.container, fragment)
-        .commit();
+            .beginTransaction()
+            .replace(R.id.container, fragment)
+            .commit();
   }
 
   protected void fillBytes(final Plane[] planes, final byte[][] yuvBytes) {
@@ -200,7 +285,8 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
     }
   }
 
-  public void onSetDebug(final boolean debug) {}
+  public void onSetDebug(final boolean debug) {
+  }
 
   @Override
   public boolean onKeyDown(final int keyCode, final KeyEvent event) {
@@ -214,6 +300,263 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
   }
 
   protected abstract void onPreviewSizeChosen(final Size size, final int rotation);
+
   protected abstract int getLayoutId();
+
   protected abstract Size getDesiredPreviewFrameSize();
+
+  public void seePicture() {
+
+    ArrayList<String> filepaths = getFilePaths();
+
+    new Thread() {
+      public void run() {
+        try {
+          runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              FrameLayout Container = (FrameLayout) findViewById(R.id.container);
+              FrameLayout imageFrame = (FrameLayout) findViewById(R.id.imageFrame);
+              TextView textView = (TextView) findViewById(R.id.textView);
+
+              RecognitionScoreView resultsView = (RecognitionScoreView) findViewById(R.id.results);
+              resultsView.setVisibility(View.INVISIBLE);
+              //Container.setVisibility(View.INVISIBLE);
+              //Made changes here
+
+              FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(200, 240);
+              params.gravity = Gravity.END;
+              Container.setLayoutParams(params);
+              Container.requestLayout();
+
+              Bitmap bmp = BitmapFactory.decodeFile(filepaths.get(0));
+              imageView.setImageBitmap(bmp);
+              textView.setText(Integer.toString(currentPosition+1)+"/"+ filepaths.size());
+              imageFrame.setVisibility(View.VISIBLE);
+            }
+          });
+          Thread.sleep(500);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }.start();
+    imageOn = true;
+    currentPosition = 0;
+  }
+
+  public void removePicture() {
+    new Thread() {
+      public void run() {
+        try {
+          runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              FrameLayout Container = (FrameLayout) findViewById(R.id.container);
+              FrameLayout imageFrame = (FrameLayout) findViewById(R.id.imageFrame);
+              imageFrame.setVisibility(View.INVISIBLE);
+              imageView.setImageDrawable(null);
+              RecognitionScoreView resultsView = (RecognitionScoreView) findViewById(R.id.results);
+              resultsView.setVisibility(View.VISIBLE);
+              //Container.setVisibility(View.VISIBLE);
+              //Made changes here
+              Container.getLayoutParams().height = LayoutParams.MATCH_PARENT;
+              Container.getLayoutParams().width = LayoutParams.MATCH_PARENT;
+              Container.requestLayout();
+            }
+          });
+          Thread.sleep(300);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }.start();
+    imageOn = false;
+    currentPosition = 0;
+  }
+
+  public ArrayList<String> getFilePaths() {
+    File directory = null;
+    ArrayList<String> filePaths = null;
+    String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+    path = path + "/saved_images";
+
+    directory = new File(path);
+
+    // check for directory
+    if (directory.isDirectory()) {
+      // getting list of file paths
+      File[] listFiles = null;
+      listFiles = directory.listFiles();
+
+      // Check for count
+      if (listFiles.length > 0) {
+
+        filePaths = new ArrayList<String>();
+        for (int i = 0; i < listFiles.length; i++) {
+          String filePath = listFiles[i].getAbsolutePath();
+          filePaths.add(filePath);
+
+        }
+        //Sort Files here
+        Collections.sort(filePaths, new Comparator<String>(){
+          @Override
+          public int compare(String s1, String s2)
+          {
+            String[] s1Values = s1.split("\\.");
+            String[] s2Values = s2.split("\\.");
+            //compare the year
+            if(s1Values.length >= 3 && s2Values.length >= 3)
+            {
+              int compare = s1Values[2].compareTo(s2Values[2]);
+              if(compare != 0) return compare;
+            }
+            //compare the month
+            if(s1Values.length >= 2 && s2Values.length >= 2)
+            {
+              int compare = s1Values[1].compareTo(s2Values[1]);
+              if(compare != 0) return compare;
+            }
+            //compare the day
+            if(s1Values.length >= 1 && s2Values.length >= 1)
+            {
+              int compare = s1Values[0].compareTo(s2Values[0]);
+              if(compare != 0) return compare;
+            }
+            return 0;
+          }
+        });
+        Collections.reverse(filePaths);
+      } else {
+        // image directory is empty
+        makeText(this, " Directory is empty. Please load some images in it !",
+                Toast.LENGTH_LONG).show();
+      }
+
+    } else {
+      AlertDialog.Builder alert = new AlertDialog.Builder(this);
+      alert.setTitle("Error!");
+      alert.setMessage(" directory path is not valid! Please set the image directory name AppConstant.java class");
+      alert.setPositiveButton("OK", null);
+      alert.show();
+    }
+
+    return filePaths;
+  }
+
+  public void deletePicture() {
+
+    ArrayList<String> filepaths = getFilePaths();
+    File fdelete = new File(filepaths.get(currentPosition));
+    filepaths.remove(currentPosition);
+
+    if (!fdelete.exists()) return;
+    new Thread() {
+      public void run() {
+        try {
+          runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              imageView.setImageBitmap(null);
+
+              if (filepaths.size() == 0)
+                  removePicture();        //Stop seeing pictures, go to camera preview
+                else {
+                  if (currentPosition <= filepaths.size() - 1) {
+                    Bitmap bmp = BitmapFactory.decodeFile(filepaths.get(currentPosition));
+                    imageView.setImageBitmap(bmp);
+                    TextView textView = (TextView) findViewById(R.id.textView);
+                    textView.setText(Integer.toString(currentPosition+1)+"/"+ filepaths.size());
+                  } else {
+                    currentPosition = filepaths.size() - 1;
+                    Bitmap bmp = BitmapFactory.decodeFile(filepaths.get(currentPosition));
+                    imageView.setImageBitmap(bmp);
+                    TextView textView = (TextView) findViewById(R.id.textView);
+                    textView.setText(Integer.toString(currentPosition+1)+"/"+ filepaths.size());
+                  }
+                }
+            }
+          });
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }.start();
+    popupWindowOn = false;
+    fdelete.delete();
+    System.out.println("file Deleted");
+
+  }
+
+  public void navigatePictures(int direction) {
+    if (!imageOn) return;
+
+    ArrayList<String> filepaths = new ArrayList();
+    filepaths = getFilePaths();
+    ArrayList<String> finalFilepaths = filepaths;
+    new Thread() {
+      public void run() {
+        try {
+          runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              rotationAngle = 0;
+              //Moving forward
+              if (direction == 0 && currentPosition < finalFilepaths.size() - 1) {
+                currentPosition++;
+                Bitmap bmp = BitmapFactory.decodeFile(finalFilepaths.get(currentPosition));
+                imageView.setImageBitmap(bmp);
+                imageView.setRotation(rotationAngle);
+                TextView textView = (TextView) findViewById(R.id.textView);
+                textView.setText(Integer.toString(currentPosition+1)+"/"+ finalFilepaths.size());
+              }
+              //Moving backward
+              else if (direction == 1 && currentPosition > 0) {
+                currentPosition--;
+                Bitmap bmp = BitmapFactory.decodeFile(finalFilepaths.get(currentPosition));
+                imageView.setImageBitmap(bmp);
+                TextView textView = (TextView) findViewById(R.id.textView);
+                textView.setText(Integer.toString(currentPosition+1)+"/"+ finalFilepaths.size());
+                if(rotationAngle != 0){
+                  imageView.setRotation(imageView.getRotation() - rotationAngle);
+                  rotationAngle = 0;
+                }
+              } else {
+                System.out.println("No Pics");
+                //Toast.makeText(this, "No more pictures!", Toast.LENGTH_SHORT).show();
+              }
+            }
+          });
+          Thread.sleep(300);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }.start();
+
+  }
+
+  public void rotateImage(){
+    if(!imageOn) return;
+
+    new Thread() {
+      public void run() {
+        try {
+          runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              rotationAngle += 90;
+              imageView.setRotation(imageView.getRotation() + rotationAngle);
+              if(rotationAngle % 360 == 0)
+                rotationAngle = 0;
+            }
+          });
+          Thread.sleep(300);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }.start();
+  }
 }

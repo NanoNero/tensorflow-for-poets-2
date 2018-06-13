@@ -16,6 +16,7 @@
 
 package org.tensorflow.demo;
 
+
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -31,16 +32,28 @@ import android.os.Trace;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.Display;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.PopupWindow;
+import android.widget.Toast;
+import java.io.FileNotFoundException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.Vector;
 import org.tensorflow.demo.OverlayView.DrawCallback;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
-import org.tensorflow.demo.R;
 
 public class ClassifierActivity extends CameraActivity implements OnImageAvailableListener {
   private static final Logger LOGGER = new Logger();
+  private int pattern = 0;
+  private boolean savePhoto = false;
+
+
 
   // These are the settings for the original v1 Inception model. If you want to
   // use a model that's been produced from the TensorFlow for Poets codelab,
@@ -69,9 +82,9 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
 
   private static final int INPUT_SIZE = 224;
   private static final int IMAGE_MEAN = 128;
-  private static final float IMAGE_STD = 128.0f;
+  private static final float IMAGE_STD = 128;
   private static final String INPUT_NAME = "input";
-  private static final String OUTPUT_NAME = "MobilenetV1/Predictions/Softmax";
+  private static final String OUTPUT_NAME = "final_result";
 
   private static final String MODEL_FILE = "file:///android_asset/graph.pb";
   private static final String LABEL_FILE = "file:///android_asset/labels.txt";
@@ -83,6 +96,8 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
 
   private Classifier classifier;
+
+  private int frameNumber = 1;
 
   private Integer sensorOrientation;
 
@@ -105,6 +120,9 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   private BorderedText borderedText;
 
   private long lastProcessingTimeMs;
+
+  public Button btnNO;
+  public Button btnYES;
 
   @Override
   protected int getLayoutId() {
@@ -240,6 +258,19 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
             resultsView.setResults(results);
             requestRender();
             computing = false;
+
+            if (frameNumber == 1){
+              frameNumber = 0;
+              try {
+                //------------- CAM ACTION CALLED HERE -----------
+                frameNumber = 0;
+                CamAction(results, cropCopyBitmap);
+              } catch (FileNotFoundException e) {
+                e.printStackTrace();
+              }
+            }
+            else
+              frameNumber = 1;
           }
         });
 
@@ -283,4 +314,164 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
       borderedText.drawLines(canvas, 10, canvas.getHeight() - 10, lines);
     }
   }
+
+  private void CamAction(final List<Classifier.Recognition> results, Bitmap bitmap) throws FileNotFoundException {
+    if(help.getText().equals("Return"))
+      return;
+
+    CameraConnectionFragment CA = (CameraConnectionFragment) getFragmentManager().findFragmentById(R.id.container);
+    if(savePhoto){
+      CA.takePhoto(bitmap);
+      Toast.makeText(this, "Photo saved successfully!", Toast.LENGTH_SHORT).show();
+      savePhoto = false;
+    }
+
+    for (final Classifier.Recognition recog : results) {
+
+      if (this.popupWindowOn) {
+
+        if (recog.getTitle().contentEquals("thumbs down")) {
+          if (recog.getConfidence() > 0.3) {
+            pattern = pattern * 10 + 1;
+            btnNO.performClick();
+          }
+          return;
+        }
+        if (recog.getTitle().contentEquals("thumbs up")) {
+          if (recog.getConfidence() > 0.7) {
+            pattern = pattern * 10 + 2;
+            btnYES.performClick();
+            Toast.makeText(this, "File deleted successfully!", Toast.LENGTH_SHORT).show();
+          }
+          return;
+        }
+      } else {
+        switch (recog.getTitle()) {
+
+          case "l sign":
+            if (recog.getConfidence() > 0.8) {
+              pattern = pattern * 10 + 0;
+              rotateImage();
+            }
+            break;
+
+          case "palm":
+            if (recog.getConfidence() > 0.7) {
+              pattern = pattern * 10 + 3;
+              removePicture();
+            }
+            break;
+
+          case "none":
+            Toast.makeText(this, "Perform Gesture!", Toast.LENGTH_SHORT).show();
+            break;
+
+          case "fist":
+            pattern = pattern * 10 + 4;
+            if (this.imageOn) return;
+
+            if (recog.getConfidence() > 0.8) {
+              savePhoto = true;
+              try {
+                Toast.makeText(this, "Smile!", Toast.LENGTH_SHORT).show();
+                TimeUnit.SECONDS.sleep(2);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+            }
+            break;
+
+          case "pinch":
+            if(imageOn)
+              return;
+
+            if (recog.getConfidence() > 0.5) {
+              pattern = pattern * 10 + 5;
+              onResume_just_ran = true;
+              seePicture();
+            }
+            break;
+
+          case "point right":
+            if (recog.getConfidence() > 0.55) {
+              pattern = pattern * 10 + 6;
+              navigatePictures(0);//Forwards
+            }
+            break;
+
+          case "point left":
+            if (recog.getConfidence() > 0.65) {
+              pattern = pattern * 10 + 7;
+              navigatePictures(1); //Backwards
+            }
+            break;
+
+          case "scissors":
+            if (recog.getConfidence() > 0.4 && !popupWindowOn) {
+              pattern = pattern * 10 + 8;
+              deleteRequest();
+            }
+            break;
+        }
+      }
+    }
+    System.out.println(pattern);
+    if (pattern > 1000)
+      pattern %= 1000;
+  }
+
+  public void deleteRequest() {
+    if (!this.imageOn) return;
+
+    popupWindowOn = true;
+
+    LayoutInflater layoutInflater
+            = (LayoutInflater) getBaseContext()
+            .getSystemService(LAYOUT_INFLATER_SERVICE);
+    View popupView = layoutInflater.inflate(R.layout.pop_layout, null);
+    final PopupWindow popupWindow = new PopupWindow(
+            popupView,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT);
+
+    btnNO = (Button) popupView.findViewById(R.id.NO);
+    btnNO.setOnClickListener(new Button.OnClickListener() {
+
+      @Override
+      public void onClick(View v) {
+        if(popupWindow.isShowing()){
+          popupWindow.dismiss();
+          popupWindowOn = false;
+        }
+        System.out.println(popupWindowOn + " no");
+        try {
+          TimeUnit.MILLISECONDS.sleep(300);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    });
+
+    btnYES = (Button) popupView.findViewById(R.id.YES);
+    btnYES.setOnClickListener(new Button.OnClickListener() {
+
+      @Override
+      public void onClick(View v) {
+        if(popupWindow.isShowing()){
+          popupWindow.dismiss();
+          popupWindowOn = false;
+        }
+        System.out.println(popupWindowOn + " yes");
+        deletePicture();
+        try {
+          TimeUnit.MILLISECONDS.sleep(300);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    });
+    popupWindow.showAtLocation(popupView, Gravity.CENTER, -220, -40);
+
+  }
+
 }
