@@ -1,3 +1,5 @@
+# Hand Gesture Recognition using Deep Learning on Android
+
 Name: Nandini Nerurkar
 
 Institute: Dhirubhai Ambani Institute of Information and Communication Technology, Gandhinagar, Gujarat
@@ -6,7 +8,7 @@ Project: Hand Gesture Recognition using Deep Learning on Android
 
 
 
-*RETRAINING THE MODEL FOR YOUR DATA
+## RETRAINING THE MODEL FOR YOUR DATA
 
 Create a main folder named GestureImages.  Create 10 (or equal to the number of classes, whichever is applicable) subfolders named after the identified hand gestures and populate them with respective hand gesture images.  
 Retrain the final layer of the Inception module using the instructions given in the following links:
@@ -20,9 +22,9 @@ https://hackernoon.com/building-an-insanely-fast-image-classifier-on-android-wit
 For information on tuning hyperparameters while following the above steps refer to the link:
 https://www.tensorflow.org/tutorials/image_retraining
 
+## Running the tests
 
-
-*CREATING EXCEL SHEET WITH TEST RESULTS
+- ### CREATING EXCEL SHEET WITH TEST RESULTS
 
 Create a new folder for TestingImages.  Create the subfolders for each class just like in the previous step and name each subfolder after a class.  Populate these folders with respective images.
 
@@ -46,7 +48,7 @@ Suppose the worksheet named "palm" is open.  Filename column has entries of all 
 
 
 
-*DERIVING GRAPHS FROM TEST RESULTS
+- ### DERIVING GRAPHS FROM TEST RESULTS
 
 Place the workbook in the same folder as the ipynb file.  Open the ipynb file using Jupyter Notebook. Make the following changes:
 1. Update the file variable by entering the name of your workbook.
