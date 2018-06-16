@@ -4,9 +4,6 @@ Name: Nandini Nerurkar
 
 Institute: Dhirubhai Ambani Institute of Information and Communication Technology, Gandhinagar, Gujarat
 
-Project: Hand Gesture Recognition using Deep Learning on Android
-
-
 
 ## RETRAINING THE MODEL FOR YOUR DATA
 
