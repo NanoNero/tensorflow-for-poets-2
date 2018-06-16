@@ -1,28 +1,30 @@
 # Hand Gesture Recognition using Deep Learning on Android
 
-Name: Nandini Nerurkar
+**Name:** Nandini Nerurkar
 
-Institute: Dhirubhai Ambani Institute of Information and Communication Technology, Gandhinagar, Gujarat
+**Institute:** Dhirubhai Ambani Institute of Information and Communication Technology, Gandhinagar, Gujarat
 
+This project presents a simple Camera App based on Tensoflow’s image classifier or the TF Classify app, which uses real-time images of the user’s air hand gestures as input. The image classifier was retrained to identify 10 hand gesture classes. When an image
+captured in real-time, was classified as belonging to a class with a probability exceeding a derived class threshold, the app executed
+the respective class function. The model was evaluated as classwise binary classifier and its error rate was measured based on
+the percentage of false positives eliminated with reference to the class thresholds
 
 ## RETRAINING THE MODEL FOR YOUR DATA
 
-Create a main folder named GestureImages.  Create 10 (or equal to the number of classes, whichever is applicable) subfolders named after the identified hand gestures and populate them with respective hand gesture images.  
-Retrain the final layer of the Inception module using the instructions given in the following links:
+The final layer of the Inception module was retrained using the instructions given in the following links:
 
-Step 1:
+- Step 1:
 https://hackernoon.com/creating-insanely-fast-image-classifiers-with-mobilenet-in-tensorflow-f030ce0a2991
 
-Step 2:
+- Step 2:
 https://hackernoon.com/building-an-insanely-fast-image-classifier-on-android-with-mobilenets-in-tensorflow-dc3e0c4410d4
 
-For information on tuning hyperparameters while following the above steps refer to the link:
+The following link was referrd to for information on tuning hyperparameters:
 https://www.tensorflow.org/tutorials/image_retraining
 
 ## Running the tests
 
-- ### CREATING EXCEL SHEET WITH TEST RESULTS
-
+- ### Creating an Excel Spreadsheet with test results
 Create a new folder for TestingImages.  Create the subfolders for each class just like in the previous step and name each subfolder after a class.  Populate these folders with respective images.
 
 Create a Microsoft Excel workbook with 10 (or equal to the number of classes, whichever is applicable) worksheets.  Name the worksheets after each of the 10 classes. In each worksheet, fill the cells B1, C1 and D1 with Filename, y_test, y_pred respectively in Bold letters.
@@ -45,7 +47,7 @@ Suppose the worksheet named "palm" is open.  Filename column has entries of all 
 
 
 
-- ### DERIVING GRAPHS FROM TEST RESULTS
+- ### Deriving graphs from test results
 
 Place the workbook in the same folder as the ipynb file.  Open the ipynb file using Jupyter Notebook. Make the following changes:
 1. Update the file variable by entering the name of your workbook.
