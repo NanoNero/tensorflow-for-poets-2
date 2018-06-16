@@ -9,7 +9,7 @@ captured in real-time, was classified as belonging to a class with a probability
 the respective class function. The model was evaluated as classwise binary classifier and its error rate was measured based on
 the percentage of false positives eliminated with reference to the class thresholds
 
-## RETRAINING THE MODEL FOR YOUR DATA
+## Retraining the model for your data
 
 The final layer of the Inception module was retrained using the instructions given in the following links:
 
